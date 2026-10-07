@@ -8,6 +8,10 @@ var hud: Control
 var interaction_manager: Node
 var save_manager: Node
 var phone_ui: CanvasLayer
+var weather_system: Node
+var inventory: Node
+var home: Node3D
+var shops: Array = []
 var player_spawn: Vector3 = Vector3(-18.0, 0.5, 26.0)
 var vehicle_nodes: Array = []
 var bus_stop_nodes: Array = []
@@ -23,14 +27,37 @@ func _ready() -> void:
     time_system = preload("res://scripts/WorldTime.gd").new()
     add_child(time_system)
 
+    weather_system = preload("res://scripts/WeatherSystem.gd").new()
+    add_child(weather_system)
+    state.set_weather(weather_system.get_weather())
+
+    inventory = preload("res://scripts/Inventory.gd").new()
+    add_child(inventory)
+
     var player_script = preload("res://scripts/Player.gd")
     player = player_script.new()
     player.position = player_spawn
     add_child(player)
 
+    home = preload("res://scripts/Home.gd").new()
+    home.position = Vector3(-18.0, 0.0, 20.0)
+    add_child(home)
+
+    var shop_phone = preload("res://scripts/Shop.gd").new()
+    shop_phone.position = Vector3(-8.0, 0.0, -12.0)
+    shop_phone.set_type("phone")
+    add_child(shop_phone)
+    shops.append(shop_phone)
+
+    var shop_clothes = preload("res://scripts/Shop.gd").new()
+    shop_clothes.position = Vector3(18.0, 0.0, 8.0)
+    shop_clothes.set_type("clothes")
+    add_child(shop_clothes)
+    shops.append(shop_clothes)
+
     interaction_manager = preload("res://scripts/InteractionManager.gd").new()
     add_child(interaction_manager)
-    interaction_manager.setup(self, player, state)
+    interaction_manager.setup(self, player, state, inventory, home)
 
     save_manager = preload("res://scripts/SaveSystem.gd").new()
     add_child(save_manager)
@@ -85,7 +112,7 @@ func _build_hud() -> void:
     hud.add_child(action_label)
 
     var hint_label = Label.new()
-    hint_label.text = "Move: WASD | Sprint: Shift | Jump: Space | Interact: E | Phone: P"
+    hint_label.text = "Move: WASD | Sprint: Shift | Jump: Space | Interact: E | Phone: P | Home: H"
     hint_label.position = Vector2(20, 650)
     hint_label.add_theme_font_size_override("font_size", 16)
     hud.add_child(hint_label)
@@ -101,7 +128,7 @@ func _spawn_npcs() -> void:
         [Vector3(-8, 0, 34), Vector3(8, 0, 34), Vector3(8, 0, 50), Vector3(-8, 0, 50)],
     ]
 
-    for index in range(10):
+    for index in range(12):
         var npc = CharacterBody3D.new()
         npc.set_script(preload("res://scripts/NPC.gd"))
         add_child(npc)
@@ -141,10 +168,16 @@ func _register_interactables() -> void:
     interaction_manager.register_interactable("Recruitment Office", Vector3(-18.0, 0.5, -12.0), "job", null)
     interaction_manager.register_interactable("Yaba Phone Shop", Vector3(-8.0, 0.5, -12.0), "shop", null)
     interaction_manager.register_interactable("Player Home", Vector3(-18.0, 0.5, 20.0), "home", null)
+    interaction_manager.register_interactable("Bank", Vector3(18.0, 0.5, 10.0), "bank", null)
     interaction_manager.register_interactable("Oshodi Market", Vector3(0.0, 0.5, 28.0), "market", null)
+    interaction_manager.register_interactable("Musa's Shop", Vector3(-30.0, 0.5, 18.0), "friend", null)
+    interaction_manager.register_interactable("Home Upgrade", Vector3(-18.0, 0.5, 20.0), "home_upgrade", home)
 
     for vehicle in vehicle_nodes:
         interaction_manager.register_interactable("Vehicle", vehicle.global_position, "vehicle", vehicle)
 
     for stop in bus_stop_nodes:
         interaction_manager.register_interactable("Bus Stop", stop.global_position, "bus_stop", stop)
+
+    for shop in shops:
+        interaction_manager.register_interactable(shop.get_shop_name(), shop.global_position, "store", shop)
