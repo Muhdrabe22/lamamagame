@@ -7,7 +7,6 @@ func save_state(game_state: Node) -> void:
     config.set_value("player", "money", game_state.money)
     config.set_value("player", "bank_balance", game_state.bank_balance)
     config.set_value("player", "current_area", game_state.current_area)
-    config.set_value("mission", "current_index", 0)
     config.save(save_path)
 
 func load_state(game_state: Node) -> void:

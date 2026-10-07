@@ -7,6 +7,7 @@ var state: Node
 var hud: Control
 var interaction_manager: Node
 var save_manager: Node
+var phone_ui: CanvasLayer
 var player_spawn: Vector3 = Vector3(-18.0, 0.5, 26.0)
 var vehicle_nodes: Array = []
 
@@ -32,6 +33,10 @@ func _ready() -> void:
 
     save_manager = preload("res://scripts/SaveSystem.gd").new()
     add_child(save_manager)
+
+    phone_ui = preload("res://scripts/PhoneUI.gd").new()
+    add_child(phone_ui)
+    phone_ui.setup(state)
 
     _build_hud()
     _spawn_npcs()
@@ -78,7 +83,7 @@ func _build_hud() -> void:
     hud.add_child(action_label)
 
     var hint_label = Label.new()
-    hint_label.text = "Move: WASD | Sprint: Shift | Jump: Space | Interact: E"
+    hint_label.text = "Move: WASD | Sprint: Shift | Jump: Space | Interact: E | Phone: P"
     hint_label.position = Vector2(20, 650)
     hint_label.add_theme_font_size_override("font_size", 16)
     hud.add_child(hint_label)

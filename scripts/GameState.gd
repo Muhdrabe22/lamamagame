@@ -3,6 +3,7 @@ extends Node
 var money: int = 20000
 var bank_balance: int = 0
 var current_area: String = "YABA"
+var mission_index: int = 0
 var missions: Array = []
 var cash_label: Label
 var area_label: Label
@@ -45,10 +46,20 @@ func complete_mission(mission_id: String) -> void:
             break
     _refresh_hud()
 
+func get_current_mission() -> Dictionary:
+    if missions.is_empty():
+        return {}
+    return missions[mission_index]
+
+func advance_mission() -> void:
+    if missions.size() > 1:
+        mission_index = (mission_index + 1) % missions.size()
+    _refresh_hud()
+
 func _refresh_hud() -> void:
     if cash_label != null:
         cash_label.text = "Cash: ₦%d | Bank: ₦%d" % [money, bank_balance]
     if area_label != null:
         area_label.text = "Area: %s" % current_area
     if mission_label != null and missions.size() > 0:
-        mission_label.text = "Mission: %s" % missions[0]["objective"]
+        mission_label.text = "Mission: %s" % missions[mission_index]["objective"]
