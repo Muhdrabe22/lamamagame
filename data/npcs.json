@@ -1,0 +1,56 @@
+{
+  "npcs": [
+    {
+      "id": "npc_001",
+      "name": "Tunde",
+      "type": "student",
+      "area": "YABA",
+      "dialogue": [
+        "How far na?",
+        "You looking for work?",
+        "Check the computer shop around the corner",
+        "You good?"
+      ],
+      "missions": ["first_day"]
+    },
+    {
+      "id": "npc_002",
+      "name": "Blessing",
+      "type": "trader",
+      "area": "OSHODI",
+      "dialogue": [
+        "What you need?",
+        "Best prices in Lagos",
+        "Fresh goods fresh!",
+        "You buying or what?"
+      ],
+      "missions": ["market_run"]
+    },
+    {
+      "id": "npc_003",
+      "name": "Chinedu",
+      "type": "worker",
+      "area": "IKEJA",
+      "dialogue": [
+        "Working hard o",
+        "Business is steady",
+        "Money dey scarce",
+        "You need work too?"
+      ],
+      "missions": ["first_delivery"]
+    },
+    {
+      "id": "npc_004",
+      "name": "Zainab",
+      "type": "food_seller",
+      "area": "SURULERE",
+      "dialogue": [
+        "Eat small thing",
+        "Food fresh fresh",
+        "Try this one",
+        "Stomach fit not protest"
+      ],
+      "missions": ["help_friend"]
+    }
+  ]
+}
