@@ -9,11 +9,13 @@ var move_speed: float = WALK_SPEED
 var yaw: float = 0.0
 var camera_pivot: Node3D
 var camera: Camera3D
+var interaction_manager: Node
 
 func _ready() -> void:
     _build_character()
     _build_camera()
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+    interaction_manager = get_parent().get_node("InteractionManager")
 
 func _build_character() -> void:
     var collision = CollisionShape3D.new()
@@ -90,6 +92,10 @@ func _physics_process(delta: float) -> void:
 
     move_and_slide()
     camera_pivot.rotation.y = yaw
+
+    if Input.is_action_just_pressed("interact"):
+        if interaction_manager != null:
+            interaction_manager.try_interact()
 
     if global_position.y < -10.0:
         global_position = Vector3(-18.0, 0.5, 26.0)

@@ -5,6 +5,8 @@ var player: CharacterBody3D
 var time_system: Node
 var state: Node
 var hud: Control
+var interaction_manager: Node
+var save_manager: Node
 var player_spawn: Vector3 = Vector3(-18.0, 0.5, 26.0)
 
 func _ready() -> void:
@@ -23,8 +25,16 @@ func _ready() -> void:
     player.position = player_spawn
     add_child(player)
 
+    interaction_manager = preload("res://scripts/InteractionManager.gd").new()
+    add_child(interaction_manager)
+    interaction_manager.setup(self, player, state)
+
+    save_manager = preload("res://scripts/SaveSystem.gd").new()
+    add_child(save_manager)
+
     _build_hud()
     _spawn_npcs()
+    _register_interactables()
     state.set_current_area("YABA")
 
 func _build_hud() -> void:
@@ -59,6 +69,12 @@ func _build_hud() -> void:
     mission_label.add_theme_font_size_override("font_size", 16)
     top_vbox.add_child(mission_label)
 
+    var action_label = Label.new()
+    action_label.text = ""
+    action_label.position = Vector2(20, 610)
+    action_label.add_theme_font_size_override("font_size", 18)
+    hud.add_child(action_label)
+
     var hint_label = Label.new()
     hint_label.text = "Move: WASD | Sprint: Shift | Jump: Space | Interact: E"
     hint_label.position = Vector2(20, 650)
@@ -66,6 +82,7 @@ func _build_hud() -> void:
     hud.add_child(hint_label)
 
     state.connect_hud(cash_label, area_label, mission_label)
+    interaction_manager.set_action_label(action_label)
 
 func _spawn_npcs() -> void:
     var routes = [
@@ -81,3 +98,9 @@ func _spawn_npcs() -> void:
         add_child(npc)
         npc.global_position = routes[index % routes.size()][0]
         npc.call("set_walk_route", routes[index % routes.size()])
+
+func _register_interactables() -> void:
+    interaction_manager.register_interactable("Recruitment Office", Vector3(-18.0, 0.5, -12.0), "job")
+    interaction_manager.register_interactable("Yaba Phone Shop", Vector3(-8.0, 0.5, -12.0), "shop")
+    interaction_manager.register_interactable("Player Home", Vector3(-18.0, 0.5, 20.0), "home")
+    interaction_manager.register_interactable("Oshodi Market", Vector3(0.0, 0.5, 28.0), "market")

@@ -38,6 +38,13 @@ func pay_money(amount: int) -> bool:
         return true
     return false
 
+func complete_mission(mission_id: String) -> void:
+    for mission in missions:
+        if mission["id"] == mission_id:
+            mission["done"] = true
+            break
+    _refresh_hud()
+
 func _refresh_hud() -> void:
     if cash_label != null:
         cash_label.text = "Cash: ₦%d | Bank: ₦%d" % [money, bank_balance]
