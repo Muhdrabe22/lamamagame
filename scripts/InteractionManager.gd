@@ -4,15 +4,17 @@ var player: Node3D
 var state: Node
 var inventory: Node
 var home: Node3D
+var clothing_system: Node
 var action_label: Label
 var interactables: Array = []
 var action_index: int = -1
 
-func setup(world: Node, player_node: Node3D, game_state: Node, inventory_node: Node, home_node: Node3D) -> void:
+func setup(world: Node, player_node: Node3D, game_state: Node, inventory_node: Node, home_node: Node3D, clothing_node: Node) -> void:
     player = player_node
     state = game_state
     inventory = inventory_node
     home = home_node
+    clothing_system = clothing_node
     set_name("InteractionManager")
 
 func set_action_label(label: Label) -> void:
@@ -57,6 +59,8 @@ func _process(_delta: float) -> void:
                 action_label.text = "Press E to talk with Musa"
             elif type_name == "home_upgrade":
                 action_label.text = "Press E to upgrade your home"
+            elif type_name == "clothing_store":
+                action_label.text = "Press E to buy a new outfit"
             elif type_name == "store":
                 action_label.text = "Press E to shop for goods"
             else:
@@ -89,7 +93,7 @@ func try_interact() -> void:
             action_label.text = "You rested at home and saved progress."
         var save_system = player.get_parent().get_node_or_null("SaveSystem")
         if save_system != null:
-            save_system.save_state(state)
+            save_system.save_state(state, inventory, home, clothing_system)
     elif type_name == "bank":
         state.deposit_money(2000)
         if action_label != null:
@@ -140,7 +144,18 @@ func try_interact() -> void:
                     action_label.text = "Home upgraded: %s" % home.get_current_level_name()
             else:
                 if action_label != null:
-                    action_label.text = "Not enough money to upgrade the home."
+                    action_label.text = "Your home is already at the max level."
+    elif type_name == "clothing_store":
+        if clothing_system != null and clothing_system.can_buy("casual", state.money):
+            state.pay_money(1500)
+            clothing_system.set_outfit("casual")
+            if inventory != null:
+                inventory.set_outfit("casual")
+            if action_label != null:
+                action_label.text = "You changed into smart casual clothes."
+        else:
+            if action_label != null:
+                action_label.text = "You cannot afford a new outfit yet."
     elif type_name == "store":
         var shop = target["node"]
         if shop != null and shop.has_method("buy_item"):

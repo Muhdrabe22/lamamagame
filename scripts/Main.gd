@@ -11,6 +11,7 @@ var phone_ui: CanvasLayer
 var weather_system: Node
 var inventory: Node
 var home: Node3D
+var clothing_system: Node
 var shops: Array = []
 var player_spawn: Vector3 = Vector3(-18.0, 0.5, 26.0)
 var vehicle_nodes: Array = []
@@ -33,6 +34,9 @@ func _ready() -> void:
 
     inventory = preload("res://scripts/Inventory.gd").new()
     add_child(inventory)
+
+    clothing_system = preload("res://scripts/ClothingSystem.gd").new()
+    add_child(clothing_system)
 
     var player_script = preload("res://scripts/Player.gd")
     player = player_script.new()
@@ -57,7 +61,7 @@ func _ready() -> void:
 
     interaction_manager = preload("res://scripts/InteractionManager.gd").new()
     add_child(interaction_manager)
-    interaction_manager.setup(self, player, state, inventory, home)
+    interaction_manager.setup(self, player, state, inventory, home, clothing_system)
 
     save_manager = preload("res://scripts/SaveSystem.gd").new()
     add_child(save_manager)
@@ -172,6 +176,7 @@ func _register_interactables() -> void:
     interaction_manager.register_interactable("Oshodi Market", Vector3(0.0, 0.5, 28.0), "market", null)
     interaction_manager.register_interactable("Musa's Shop", Vector3(-30.0, 0.5, 18.0), "friend", null)
     interaction_manager.register_interactable("Home Upgrade", Vector3(-18.0, 0.5, 20.0), "home_upgrade", home)
+    interaction_manager.register_interactable("Clothes Store", Vector3(18.0, 0.5, 8.0), "clothing_store", null)
 
     for vehicle in vehicle_nodes:
         interaction_manager.register_interactable("Vehicle", vehicle.global_position, "vehicle", vehicle)
