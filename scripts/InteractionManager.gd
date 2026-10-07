@@ -52,29 +52,36 @@ func try_interact() -> void:
         return
 
     var target = interactables[action_index]
+    
     if target["type"] == "job":
-        if state.missions.size() > 0:
-            state.missions[0]["done"] = true
-            state.add_money(5000)
+        var current_mission = state.get_current_mission()
+        if not current_mission.is_empty() and current_mission["id"] == "first_job":
+            state.complete_mission("first_job")
             if action_label != null:
-                action_label.text = "Job accepted: deliver package in Yaba. Earned ₦5,000."
+                action_label.text = "Job accepted! Deliver package to Oshodi. Earned ₦5,000."
     elif target["type"] == "shop":
         if state.pay_money(1200):
             if action_label != null:
-                action_label.text = "You bought a phone top-up and data bundle."
+                action_label.text = "You bought phone top-up and data. Spent ₦1,200."
         else:
             if action_label != null:
-                action_label.text = "Not enough cash for this purchase."
+                action_label.text = "Not enough cash. You need ₦1,200."
     elif target["type"] == "home":
         if action_label != null:
-            action_label.text = "You rest at home and save your progress."
+            action_label.text = "You rested at home and saved progress."
         var save_system = player.get_parent().get_node_or_null("SaveSystem")
         if save_system != null:
             save_system.save_state(state)
     elif target["type"] == "market":
-        state.add_money(2500)
-        if action_label != null:
-            action_label.text = "Market run complete. You earned ₦2,500 from local trade."
+        var current_mission = state.get_current_mission()
+        if not current_mission.is_empty() and current_mission["id"] == "market_run":
+            state.complete_mission("market_run")
+            if action_label != null:
+                action_label.text = "Market delivery complete! Earned ₦2,500."
+        else:
+            state.add_money(500)
+            if action_label != null:
+                action_label.text = "Bought some goods from market. +₦500 profit."
     elif target["type"] == "vehicle":
         var vehicle = target["node"]
         if vehicle != null:
@@ -87,8 +94,4 @@ func try_interact() -> void:
                 if player.has_method("enter_vehicle"):
                     player.enter_vehicle(vehicle)
                     if action_label != null:
-                        action_label.text = "You are driving the vehicle."
-
-    if state.missions.size() > 0 and state.missions[0]["id"] == "first_job" and state.missions[0]["done"]:
-        state.missions.remove_at(0)
-        state.missions.insert(0, {"id": "market_run", "title": "Market Run", "objective": "Collect goods in Oshodi and deliver them to Yaba", "done": false})
+                        action_label.text = "Driving... WASD to steer, move forward/back to accelerate."

@@ -11,9 +11,9 @@ var mission_label: Label
 
 func _ready() -> void:
     missions = [
-        {"id": "first_job", "title": "First Day", "objective": "Find a job in Yaba", "done": false},
-        {"id": "market_run", "title": "Market Run", "objective": "Collect goods in Oshodi and deliver them to Yaba", "done": false},
-        {"id": "help_friend", "title": "Help a Friend", "objective": "Meet a contact in Surulere", "done": false}
+        {"id": "first_job", "title": "First Day", "objective": "Find a job in Yaba", "reward": 5000, "done": false},
+        {"id": "market_run", "title": "Market Run", "objective": "Collect goods in Oshodi and deliver to Yaba", "reward": 2500, "done": false},
+        {"id": "help_friend", "title": "Help a Friend", "objective": "Meet Musa in Surulere and help with his shop", "reward": 3500, "done": false}
     ]
     _refresh_hud()
 
@@ -39,11 +39,23 @@ func pay_money(amount: int) -> bool:
         return true
     return false
 
+func deposit_money(amount: int) -> void:
+    if pay_money(amount):
+        bank_balance += amount
+        _refresh_hud()
+
+func withdraw_money(amount: int) -> void:
+    if amount <= bank_balance:
+        bank_balance -= amount
+        add_money(amount)
+
 func complete_mission(mission_id: String) -> void:
     for mission in missions:
         if mission["id"] == mission_id:
             mission["done"] = true
+            add_money(mission.get("reward", 0))
             break
+    advance_mission()
     _refresh_hud()
 
 func get_current_mission() -> Dictionary:
@@ -53,7 +65,10 @@ func get_current_mission() -> Dictionary:
 
 func advance_mission() -> void:
     if missions.size() > 1:
-        mission_index = (mission_index + 1) % missions.size()
+        for i in range(missions.size()):
+            if not missions[i]["done"]:
+                mission_index = i
+                break
     _refresh_hud()
 
 func _refresh_hud() -> void:
@@ -62,4 +77,6 @@ func _refresh_hud() -> void:
     if area_label != null:
         area_label.text = "Area: %s" % current_area
     if mission_label != null and missions.size() > 0:
-        mission_label.text = "Mission: %s" % missions[mission_index]["objective"]
+        var current = get_current_mission()
+        if not current.is_empty():
+            mission_label.text = "Mission: %s" % current["objective"]

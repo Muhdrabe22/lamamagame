@@ -10,11 +10,12 @@ func setup(game_state: Node) -> void:
     state = game_state
     _build_phone_ui()
     _update_phone_state()
+    set_name("PhoneUI")
 
 func _build_phone_ui() -> void:
     phone_panel = PanelContainer.new()
     phone_panel.position = Vector2(890, 110)
-    phone_panel.custom_minimum_size = Vector2(290, 500)
+    phone_panel.custom_minimum_size = Vector2(300, 540)
     add_child(phone_panel)
 
     var phone_root = VBoxContainer.new()
@@ -29,18 +30,20 @@ func _build_phone_ui() -> void:
     for app_name in apps:
         var button = Button.new()
         button.text = app_name
+        button.custom_minimum_size = Vector2(250, 40)
         button.pressed.connect(_on_app_pressed.bind(app_name))
         phone_root.add_child(button)
 
     status_label = Label.new()
     status_label.text = "Welcome to Lagos."
     status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    status_label.custom_minimum_size = Vector2(240, 180)
+    status_label.custom_minimum_size = Vector2(260, 200)
     phone_root.add_child(status_label)
 
     map_panel = PanelContainer.new()
     map_panel.visible = false
-    map_panel.custom_minimum_size = Vector2(250, 200)
+    map_panel.custom_minimum_size = Vector2(300, 320)
+    map_panel.position = Vector2(890, 110)
     add_child(map_panel)
 
     var map_root = VBoxContainer.new()
@@ -52,9 +55,14 @@ func _build_phone_ui() -> void:
     map_root.add_child(map_title)
 
     var map_text = Label.new()
-    map_text.text = "YABA\nOSHODI\nIKEJA\nSURULERE"
-    map_text.add_theme_font_size_override("font_size", 18)
+    map_text.text = "\nYABA - Students & Tech\nOSHODI - Markets & Transport\nIKEJA - Business & Shopping\nSURULERE - Residential\n"
+    map_text.add_theme_font_size_override("font_size", 16)
     map_root.add_child(map_text)
+
+    var current_pos = Label.new()
+    current_pos.text = "You are in: YABA"
+    current_pos.add_theme_font_size_override("font_size", 18)
+    map_root.add_child(current_pos)
 
     phone_panel.visible = false
 
@@ -62,31 +70,29 @@ func _on_app_pressed(app_name: String) -> void:
     if app_name == "MAP":
         _show_map()
     elif app_name == "BANK":
-        status_label.text = "Bank ready. Balance: ₦%d" % state.bank_balance
+        status_label.text = "Bank Account\nCash: ₦%d\nSaved: ₦%d\n\nOptions: Deposit, Withdraw" % [state.money, state.bank_balance]
     elif app_name == "JOBS":
-        status_label.text = "Available jobs: Delivery, Shop Worker, Driver"
+        status_label.text = "Job Board\n\nAvailable:\n- Delivery: ₦5,000\n- Shop Worker: ₦3,000\n- Driver: ₦4,500"
     elif app_name == "MESSAGES":
-        status_label.text = "Message: 'How far? Check the shop around the corner.'"
+        status_label.text = "Messages:\n\nAunty Bisi: 'How far? Check the shop around the corner.'\n\nMusa: 'Need help in Surulere'"
     elif app_name == "CONTACTS":
-        status_label.text = "Contacts: Aunty Bisi, Musa, Tunde, Ngozi"
+        status_label.text = "Contacts:\n\nAunty Bisi - Shop Owner\nMusa - Market Trader\nTunde - Driver\nNgozi - Office Worker\nChief - Recruitment"
     elif app_name == "INVENTORY":
-        status_label.text = "Inventory: basic phone, basic clothes, starter cash"
+        status_label.text = "Inventory:\n\n- Basic Phone\n- Casual Clothes\n- Starter Cash: ₦20,000\n- ID Card"
 
 func _show_map() -> void:
-    map_panel.position = Vector2(890, 130)
     map_panel.visible = true
-    status_label.text = "Map open. Player in YABA."
+    status_label.text = "Map view active. You are in %s." % state.current_area
 
 func toggle_phone() -> void:
     is_open = not is_open
     phone_panel.visible = is_open
-    if not is_open:
-        map_panel.visible = false
-    else:
+    map_panel.visible = false
+    if is_open:
         _update_phone_state()
 
 func _update_phone_state() -> void:
     if state == null:
         return
-    if phone_panel != null:
+    if status_label != null:
         status_label.text = "Cash: ₦%d | Area: %s" % [state.money, state.current_area]

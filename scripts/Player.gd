@@ -102,6 +102,11 @@ func _physics_process(delta: float) -> void:
         if interaction_manager != null:
             interaction_manager.try_interact()
 
+    if Input.is_action_just_pressed("ui_accept"):
+        var phone = get_parent().get_node_or_null("PhoneUI")
+        if phone != null and phone.has_method("toggle_phone"):
+            phone.toggle_phone()
+
     if global_position.y < -10.0:
         global_position = Vector3(-18.0, 0.5, 26.0)
 
