@@ -14,26 +14,36 @@ func setup(world: Node, player_node: Node3D, game_state: Node) -> void:
 func set_action_label(label: Label) -> void:
     action_label = label
 
-func register_interactable(name: String, position: Vector3, type: String) -> void:
-    interactables.append({"name": name, "position": position, "type": type})
+func register_interactable(name: String, position: Vector3, type: String, node: Node = null) -> void:
+    interactables.append({"name": name, "position": position, "type": type, "node": node})
 
 func _process(_delta: float) -> void:
     if player == null:
         return
+
     var nearest_name = ""
     var nearest_dist = INF
-    for entry in interactables:
+    var found_index = -1
+    for i in range(interactables.size()):
+        var entry = interactables[i]
         var dist = player.global_position.distance_to(entry["position"])
         if dist < 3.2 and dist < nearest_dist:
             nearest_dist = dist
             nearest_name = entry["name"]
-            action_index = interactables.find(entry)
-        elif dist >= 3.2 and nearest_name == "":
-            action_index = -1
+            found_index = i
+
+    action_index = found_index
 
     if action_label != null:
         if nearest_name != "":
-            action_label.text = "Press E to interact with %s" % nearest_name
+            if interactables[action_index]["type"] == "vehicle":
+                var vehicle = interactables[action_index]["node"]
+                if vehicle != null and vehicle.is_occupied:
+                    action_label.text = "Press E to exit vehicle"
+                else:
+                    action_label.text = "Press E to enter vehicle"
+            else:
+                action_label.text = "Press E to interact with %s" % nearest_name
         else:
             action_label.text = ""
 
@@ -65,6 +75,19 @@ func try_interact() -> void:
         state.add_money(2500)
         if action_label != null:
             action_label.text = "Market run complete. You earned ₦2,500 from local trade."
+    elif target["type"] == "vehicle":
+        var vehicle = target["node"]
+        if vehicle != null:
+            if vehicle.is_occupied:
+                if player.has_method("exit_vehicle"):
+                    player.exit_vehicle()
+                    if action_label != null:
+                        action_label.text = "You exited the vehicle."
+            else:
+                if player.has_method("enter_vehicle"):
+                    player.enter_vehicle(vehicle)
+                    if action_label != null:
+                        action_label.text = "You are driving the vehicle."
 
     if state.missions.size() > 0 and state.missions[0]["id"] == "first_job" and state.missions[0]["done"]:
         state.missions.remove_at(0)

@@ -10,12 +10,14 @@ var yaw: float = 0.0
 var camera_pivot: Node3D
 var camera: Camera3D
 var interaction_manager: Node
+var vehicle_reference: Node = null
+var is_driving: bool = false
 
 func _ready() -> void:
     _build_character()
     _build_camera()
     Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-    interaction_manager = get_parent().get_node("InteractionManager")
+    interaction_manager = get_parent().get_node_or_null("InteractionManager")
 
 func _build_character() -> void:
     var collision = CollisionShape3D.new()
@@ -51,6 +53,9 @@ func _unhandled_input(event: InputEvent) -> void:
         camera_pivot.rotation.y = yaw
 
 func _physics_process(delta: float) -> void:
+    if vehicle_reference != null and is_driving:
+        return
+
     var input_dir := Vector2(
         Input.get_axis("move_left", "move_right"),
         Input.get_axis("move_forward", "move_backward")
@@ -99,3 +104,21 @@ func _physics_process(delta: float) -> void:
 
     if global_position.y < -10.0:
         global_position = Vector3(-18.0, 0.5, 26.0)
+
+func enter_vehicle(vehicle: Node) -> void:
+    if vehicle == null:
+        return
+    vehicle_reference = vehicle
+    is_driving = true
+    visible = false
+    position = vehicle.position + Vector3(0.0, 0.6, 0.0)
+    if vehicle.has_method("occupy"):
+        vehicle.occupy(self)
+
+func exit_vehicle() -> void:
+    if vehicle_reference != null and vehicle_reference.has_method("release"):
+        vehicle_reference.release()
+    vehicle_reference = null
+    is_driving = false
+    visible = true
+    position = global_position + Vector3(0.0, 0.0, 1.5)

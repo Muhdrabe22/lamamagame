@@ -8,6 +8,7 @@ var hud: Control
 var interaction_manager: Node
 var save_manager: Node
 var player_spawn: Vector3 = Vector3(-18.0, 0.5, 26.0)
+var vehicle_nodes: Array = []
 
 func _ready() -> void:
     state = preload("res://scripts/GameState.gd").new()
@@ -34,6 +35,7 @@ func _ready() -> void:
 
     _build_hud()
     _spawn_npcs()
+    _spawn_vehicles()
     _register_interactables()
     state.set_current_area("YABA")
 
@@ -99,8 +101,24 @@ func _spawn_npcs() -> void:
         npc.global_position = routes[index % routes.size()][0]
         npc.call("set_walk_route", routes[index % routes.size()])
 
+func _spawn_vehicles() -> void:
+    var vehicle_positions = [
+        Vector3(20.0, 0.25, 14.0),
+        Vector3(-8.0, 0.25, 32.0),
+        Vector3(30.0, 0.25, 38.0)
+    ]
+
+    for position in vehicle_positions:
+        var vehicle = preload("res://scripts/Vehicle.gd").new()
+        vehicle.position = position
+        add_child(vehicle)
+        vehicle_nodes.append(vehicle)
+
 func _register_interactables() -> void:
-    interaction_manager.register_interactable("Recruitment Office", Vector3(-18.0, 0.5, -12.0), "job")
-    interaction_manager.register_interactable("Yaba Phone Shop", Vector3(-8.0, 0.5, -12.0), "shop")
-    interaction_manager.register_interactable("Player Home", Vector3(-18.0, 0.5, 20.0), "home")
-    interaction_manager.register_interactable("Oshodi Market", Vector3(0.0, 0.5, 28.0), "market")
+    interaction_manager.register_interactable("Recruitment Office", Vector3(-18.0, 0.5, -12.0), "job", null)
+    interaction_manager.register_interactable("Yaba Phone Shop", Vector3(-8.0, 0.5, -12.0), "shop", null)
+    interaction_manager.register_interactable("Player Home", Vector3(-18.0, 0.5, 20.0), "home", null)
+    interaction_manager.register_interactable("Oshodi Market", Vector3(0.0, 0.5, 28.0), "market", null)
+
+    for vehicle in vehicle_nodes:
+        interaction_manager.register_interactable("Vehicle", vehicle.global_position, "vehicle", vehicle)
