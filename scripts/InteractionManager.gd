@@ -1,110 +1,157 @@
-extends Node
+extends Node3D
 
-var player: Node3D
+var city: Node3D
+var player: CharacterBody3D
+var time_system: Node
 var state: Node
-var action_label: Label
-var interactables: Array = []
-var action_index: int = -1
+var hud: Control
+var interaction_manager: Node
+var save_manager: Node
+var phone_ui: CanvasLayer
+var weather_system: Node
+var player_spawn: Vector3 = Vector3(-18.0, 0.5, 26.0)
+var vehicle_nodes: Array = []
+var bus_stop_nodes: Array = []
 
-func setup(world: Node, player_node: Node3D, game_state: Node) -> void:
-    player = player_node
-    state = game_state
-    set_name("InteractionManager")
+func _ready() -> void:
+    state = preload("res://scripts/GameState.gd").new()
+    add_child(state)
 
-func set_action_label(label: Label) -> void:
-    action_label = label
+    city = preload("res://scripts/CityBuilder.gd").new()
+    add_child(city)
+    city.build_world()
 
-func register_interactable(name: String, position: Vector3, type: String, node: Node = null) -> void:
-    interactables.append({"name": name, "position": position, "type": type, "node": node})
+    time_system = preload("res://scripts/WorldTime.gd").new()
+    add_child(time_system)
 
-func _process(_delta: float) -> void:
-    if player == null:
-        return
+    weather_system = preload("res://scripts/WeatherSystem.gd").new()
+    add_child(weather_system)
+    state.set_weather(weather_system.get_weather())
 
-    var nearest_name = ""
-    var nearest_dist = INF
-    var found_index = -1
-    for i in range(interactables.size()):
-        var entry = interactables[i]
-        var dist = player.global_position.distance_to(entry["position"])
-        if dist < 3.2 and dist < nearest_dist:
-            nearest_dist = dist
-            nearest_name = entry["name"]
-            found_index = i
+    var player_script = preload("res://scripts/Player.gd")
+    player = player_script.new()
+    player.position = player_spawn
+    add_child(player)
 
-    action_index = found_index
+    interaction_manager = preload("res://scripts/InteractionManager.gd").new()
+    add_child(interaction_manager)
+    interaction_manager.setup(self, player, state)
 
-    if action_label != null:
-        if nearest_name != "":
-            if interactables[action_index]["type"] == "vehicle":
-                var vehicle = interactables[action_index]["node"]
-                if vehicle != null and vehicle.is_occupied:
-                    action_label.text = "Press E to exit vehicle"
-                else:
-                    action_label.text = "Press E to enter vehicle"
-            elif interactables[action_index]["type"] == "bus_stop":
-                var stop = interactables[action_index]["node"]
-                var dest = stop.get_destination() if stop != null and stop.has_method("get_destination") else "OSHODI"
-                action_label.text = "Press E to take bus to %s" % dest
-            else:
-                action_label.text = "Press E to interact with %s" % nearest_name
-        else:
-            action_label.text = ""
+    save_manager = preload("res://scripts/SaveSystem.gd").new()
+    add_child(save_manager)
 
-func try_interact() -> void:
-    if player == null or action_index == -1:
-        return
+    phone_ui = preload("res://scripts/PhoneUI.gd").new()
+    add_child(phone_ui)
+    phone_ui.setup(state)
 
-    var target = interactables[action_index]
+    _build_hud()
+    _spawn_npcs()
+    _spawn_vehicles()
+    _spawn_bus_stops()
+    _register_interactables()
+    state.set_current_area("YABA")
 
-    if target["type"] == "job":
-        var current_mission = state.get_current_mission()
-        if not current_mission.is_empty() and current_mission["id"] == "first_job":
-            state.complete_mission("first_job")
-            if action_label != null:
-                action_label.text = "Job accepted! Deliver package to Oshodi. Earned ₦5,000."
-    elif target["type"] == "shop":
-        if state.pay_money(1200):
-            if action_label != null:
-                action_label.text = "You bought phone top-up and data. Spent ₦1,200."
-        else:
-            if action_label != null:
-                action_label.text = "Not enough cash. You need ₦1,200."
-    elif target["type"] == "home":
-        if action_label != null:
-            action_label.text = "You rested at home and saved progress."
-        var save_system = player.get_parent().get_node_or_null("SaveSystem")
-        if save_system != null:
-            save_system.save_state(state)
-    elif target["type"] == "market":
-        var current_mission = state.get_current_mission()
-        if not current_mission.is_empty() and current_mission["id"] == "market_run":
-            state.complete_mission("market_run")
-            if action_label != null:
-                action_label.text = "Market delivery complete! Earned ₦2,500."
-        else:
-            state.add_money(500)
-            if action_label != null:
-                action_label.text = "Bought some goods from market. +₦500 profit."
-    elif target["type"] == "vehicle":
-        var vehicle = target["node"]
-        if vehicle != null:
-            if vehicle.is_occupied:
-                if player.has_method("exit_vehicle"):
-                    player.exit_vehicle()
-                    if action_label != null:
-                        action_label.text = "You exited the vehicle."
-            else:
-                if player.has_method("enter_vehicle"):
-                    player.enter_vehicle(vehicle)
-                    if action_label != null:
-                        action_label.text = "Driving... WASD to steer, move forward/back to accelerate."
-    elif target["type"] == "bus_stop":
-        var stop = target["node"]
-        if stop != null and stop.has_method("get_destination"):
-            var destination = stop.get_destination()
-            state.set_current_area(destination)
-            if action_label != null:
-                action_label.text = "You boarded a bus and travelled to %s." % destination
-            if state.get_current_mission().get("id", "") == "market_run":
-                state.add_money(800)
+func _build_hud() -> void:
+    var canvas = CanvasLayer.new()
+    add_child(canvas)
+
+    hud = Control.new()
+    hud.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    hud.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    canvas.add_child(hud)
+
+    var top_panel = PanelContainer.new()
+    top_panel.position = Vector2(20, 20)
+    top_panel.custom_minimum_size = Vector2(360, 120)
+    hud.add_child(top_panel)
+
+    var top_vbox = VBoxContainer.new()
+    top_panel.add_child(top_vbox)
+
+    var cash_label = Label.new()
+    cash_label.text = "Cash: ₦20,000 | Bank: ₦0"
+    cash_label.add_theme_font_size_override("font_size", 22)
+    top_vbox.add_child(cash_label)
+
+    var area_label = Label.new()
+    area_label.text = "Area: YABA"
+    area_label.add_theme_font_size_override("font_size", 18)
+    top_vbox.add_child(area_label)
+
+    var mission_label = Label.new()
+    mission_label.text = "Mission: Find a job in Yaba"
+    mission_label.add_theme_font_size_override("font_size", 16)
+    top_vbox.add_child(mission_label)
+
+    var action_label = Label.new()
+    action_label.text = ""
+    action_label.position = Vector2(20, 610)
+    action_label.add_theme_font_size_override("font_size", 18)
+    hud.add_child(action_label)
+
+    var hint_label = Label.new()
+    hint_label.text = "Move: WASD | Sprint: Shift | Jump: Space | Interact: E | Phone: P"
+    hint_label.position = Vector2(20, 650)
+    hint_label.add_theme_font_size_override("font_size", 16)
+    hud.add_child(hint_label)
+
+    state.connect_hud(cash_label, area_label, mission_label)
+    interaction_manager.set_action_label(action_label)
+
+func _spawn_npcs() -> void:
+    var routes = [
+        [Vector3(-12, 0, -10), Vector3(10, 0, -10), Vector3(10, 0, 12), Vector3(-12, 0, 12)],
+        [Vector3(18, 0, 22), Vector3(36, 0, 22), Vector3(36, 0, 42), Vector3(18, 0, 42)],
+        [Vector3(-35, 0, 18), Vector3(-20, 0, 18), Vector3(-20, 0, 30), Vector3(-35, 0, 30)],
+        [Vector3(-8, 0, 34), Vector3(8, 0, 34), Vector3(8, 0, 50), Vector3(-8, 0, 50)],
+    ]
+
+    for index in range(10):
+        var npc = CharacterBody3D.new()
+        npc.set_script(preload("res://scripts/NPC.gd"))
+        add_child(npc)
+        npc.global_position = routes[index % routes.size()][0]
+        npc.call("set_walk_route", routes[index % routes.size()])
+
+func _spawn_vehicles() -> void:
+    var vehicle_positions = [
+        Vector3(20.0, 0.25, 14.0),
+        Vector3(-8.0, 0.25, 32.0),
+        Vector3(30.0, 0.25, 38.0)
+    ]
+
+    for position in vehicle_positions:
+        var vehicle = preload("res://scripts/Vehicle.gd").new()
+        vehicle.position = position
+        add_child(vehicle)
+        vehicle_nodes.append(vehicle)
+
+func _spawn_bus_stops() -> void:
+    var bus_positions = [
+        Vector3(-18.0, 0.1, -8.0),
+        Vector3(0.0, 0.1, 24.0),
+        Vector3(32.0, 0.1, 8.0),
+        Vector3(-32.0, 0.1, 18.0)
+    ]
+
+    var destinations = ["OSHODI", "IKEJA", "SURULERE", "YABA"]
+    for i in range(bus_positions.size()):
+        var stop = preload("res://scripts/BusStop.gd").new()
+        stop.position = bus_positions[i]
+        stop.set_destination(destinations[i])
+        add_child(stop)
+        bus_stop_nodes.append(stop)
+
+func _register_interactables() -> void:
+    interaction_manager.register_interactable("Recruitment Office", Vector3(-18.0, 0.5, -12.0), "job", null)
+    interaction_manager.register_interactable("Yaba Phone Shop", Vector3(-8.0, 0.5, -12.0), "shop", null)
+    interaction_manager.register_interactable("Player Home", Vector3(-18.0, 0.5, 20.0), "home", null)
+    interaction_manager.register_interactable("Bank", Vector3(18.0, 0.5, 10.0), "bank", null)
+    interaction_manager.register_interactable("Oshodi Market", Vector3(0.0, 0.5, 28.0), "market", null)
+    interaction_manager.register_interactable("Musa's Shop", Vector3(-30.0, 0.5, 18.0), "friend", null)
+
+    for vehicle in vehicle_nodes:
+        interaction_manager.register_interactable("Vehicle", vehicle.global_position, "vehicle", vehicle)
+
+    for stop in bus_stop_nodes:
+        interaction_manager.register_interactable("Bus Stop", stop.global_position, "bus_stop", stop)

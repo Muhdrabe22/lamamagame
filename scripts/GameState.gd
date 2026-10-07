@@ -3,6 +3,7 @@ extends Node
 var money: int = 20000
 var bank_balance: int = 0
 var current_area: String = "YABA"
+var current_weather: String = "sunny"
 var mission_index: int = 0
 var missions: Array = []
 var cash_label: Label
@@ -27,6 +28,9 @@ func set_current_area(area_name: String) -> void:
     current_area = area_name
     _refresh_hud()
 
+func set_weather(weather_name: String) -> void:
+    current_weather = weather_name
+
 func add_money(amount: int) -> void:
     if amount > 0:
         money += amount
@@ -40,14 +44,16 @@ func pay_money(amount: int) -> bool:
     return false
 
 func deposit_money(amount: int) -> void:
-    if pay_money(amount):
+    if amount <= money:
+        money -= amount
         bank_balance += amount
         _refresh_hud()
 
 func withdraw_money(amount: int) -> void:
     if amount <= bank_balance:
         bank_balance -= amount
-        add_money(amount)
+        money += amount
+        _refresh_hud()
 
 func complete_mission(mission_id: String) -> void:
     for mission in missions:
@@ -75,7 +81,7 @@ func _refresh_hud() -> void:
     if cash_label != null:
         cash_label.text = "Cash: ₦%d | Bank: ₦%d" % [money, bank_balance]
     if area_label != null:
-        area_label.text = "Area: %s" % current_area
+        area_label.text = "Area: %s | Weather: %s" % [current_area, current_weather]
     if mission_label != null and missions.size() > 0:
         var current = get_current_mission()
         if not current.is_empty():
