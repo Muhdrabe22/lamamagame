@@ -10,6 +10,7 @@ var save_manager: Node
 var phone_ui: CanvasLayer
 var player_spawn: Vector3 = Vector3(-18.0, 0.5, 26.0)
 var vehicle_nodes: Array = []
+var bus_stop_nodes: Array = []
 
 func _ready() -> void:
     state = preload("res://scripts/GameState.gd").new()
@@ -41,6 +42,7 @@ func _ready() -> void:
     _build_hud()
     _spawn_npcs()
     _spawn_vehicles()
+    _spawn_bus_stops()
     _register_interactables()
     state.set_current_area("YABA")
 
@@ -119,6 +121,22 @@ func _spawn_vehicles() -> void:
         add_child(vehicle)
         vehicle_nodes.append(vehicle)
 
+func _spawn_bus_stops() -> void:
+    var bus_positions = [
+        Vector3(-18.0, 0.1, -8.0),
+        Vector3(0.0, 0.1, 24.0),
+        Vector3(32.0, 0.1, 8.0),
+        Vector3(-32.0, 0.1, 18.0)
+    ]
+
+    var destinations = ["OSHODI", "IKEJA", "SURULERE", "YABA"]
+    for i in range(bus_positions.size()):
+        var stop = preload("res://scripts/BusStop.gd").new()
+        stop.position = bus_positions[i]
+        stop.set_destination(destinations[i])
+        add_child(stop)
+        bus_stop_nodes.append(stop)
+
 func _register_interactables() -> void:
     interaction_manager.register_interactable("Recruitment Office", Vector3(-18.0, 0.5, -12.0), "job", null)
     interaction_manager.register_interactable("Yaba Phone Shop", Vector3(-8.0, 0.5, -12.0), "shop", null)
@@ -127,3 +145,6 @@ func _register_interactables() -> void:
 
     for vehicle in vehicle_nodes:
         interaction_manager.register_interactable("Vehicle", vehicle.global_position, "vehicle", vehicle)
+
+    for stop in bus_stop_nodes:
+        interaction_manager.register_interactable("Bus Stop", stop.global_position, "bus_stop", stop)

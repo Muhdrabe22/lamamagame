@@ -12,7 +12,7 @@ var mission_label: Label
 func _ready() -> void:
     missions = [
         {"id": "first_job", "title": "First Day", "objective": "Find a job in Yaba", "reward": 5000, "done": false},
-        {"id": "market_run", "title": "Market Run", "objective": "Collect goods in Oshodi and deliver to Yaba", "reward": 2500, "done": false},
+        {"id": "market_run", "title": "Market Run", "objective": "Collect goods in Oshodi and deliver them to Yaba", "reward": 2500, "done": false},
         {"id": "help_friend", "title": "Help a Friend", "objective": "Meet Musa in Surulere and help with his shop", "reward": 3500, "done": false}
     ]
     _refresh_hud()

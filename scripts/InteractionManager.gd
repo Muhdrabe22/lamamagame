@@ -42,6 +42,10 @@ func _process(_delta: float) -> void:
                     action_label.text = "Press E to exit vehicle"
                 else:
                     action_label.text = "Press E to enter vehicle"
+            elif interactables[action_index]["type"] == "bus_stop":
+                var stop = interactables[action_index]["node"]
+                var dest = stop.get_destination() if stop != null and stop.has_method("get_destination") else "OSHODI"
+                action_label.text = "Press E to take bus to %s" % dest
             else:
                 action_label.text = "Press E to interact with %s" % nearest_name
         else:
@@ -52,7 +56,7 @@ func try_interact() -> void:
         return
 
     var target = interactables[action_index]
-    
+
     if target["type"] == "job":
         var current_mission = state.get_current_mission()
         if not current_mission.is_empty() and current_mission["id"] == "first_job":
@@ -95,3 +99,12 @@ func try_interact() -> void:
                     player.enter_vehicle(vehicle)
                     if action_label != null:
                         action_label.text = "Driving... WASD to steer, move forward/back to accelerate."
+    elif target["type"] == "bus_stop":
+        var stop = target["node"]
+        if stop != null and stop.has_method("get_destination"):
+            var destination = stop.get_destination()
+            state.set_current_area(destination)
+            if action_label != null:
+                action_label.text = "You boarded a bus and travelled to %s." % destination
+            if state.get_current_mission().get("id", "") == "market_run":
+                state.add_money(800)
