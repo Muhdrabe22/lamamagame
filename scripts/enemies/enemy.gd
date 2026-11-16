@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 signal health_changed(current_health: int, maximum_health: int)
-signal died
+signal died(enemy: Node)
 
 @export var max_health: int = 100
 @export var patrol_speed: float = 55.0
@@ -48,7 +48,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			return
 
-	_patrol(delta)
+	_patrol()
 	move_and_slide()
 
 
@@ -58,7 +58,7 @@ func _find_player() -> void:
 		_player = players[0] as Node2D
 
 
-func _patrol(_delta: float) -> void:
+func _patrol() -> void:
 	if patrol_points.is_empty():
 		velocity = Vector2.ZERO
 		return
@@ -70,8 +70,7 @@ func _patrol(_delta: float) -> void:
 
 
 func _move_toward_position(target: Vector2, speed: float) -> void:
-	var direction := global_position.direction_to(target)
-	velocity = direction * speed
+	velocity = global_position.direction_to(target) * speed
 
 
 func _attack_player() -> void:
@@ -87,8 +86,27 @@ func take_damage(amount: int, _source: Node = null) -> void:
 		return
 	current_health = maxi(0, current_health - amount)
 	health_changed.emit(current_health, max_health)
+	if has_node("Body"):
+		var body := get_node("Body") as CanvasItem
+		var tween := create_tween()
+		tween.tween_property(body, "modulate", Color(1.0, 0.45, 0.35, 1.0), 0.05)
+		tween.tween_property(body, "modulate", Color.WHITE, 0.12)
 	if current_health == 0:
 		_is_dead = true
 		velocity = Vector2.ZERO
+		if has_node("HitEffect"):
+			(get_node("HitEffect") as Node2D).burst(Color(0.95, 0.35, 0.22, 1.0))
+		if has_node("CollisionShape2D"):
+			(get_node("CollisionShape2D") as CollisionShape2D).set_deferred("disabled", true)
+		if has_node("Body"):
+			(get_node("Body") as CanvasItem).hide()
+		if has_node("CenterMark"):
+			(get_node("CenterMark") as CanvasItem).hide()
+		if has_node("HitEffect"):
+			(get_node("HitEffect") as Node2D).hide()
+		if has_node("AudioStreamPlayer"):
+			(get_node("AudioStreamPlayer") as AudioStreamPlayer).play()
 		died.emit(self)
-		queue_free()
+		queue_free.call_deferred()
+	elif has_node("AudioStreamPlayer"):
+		(get_node("AudioStreamPlayer") as AudioStreamPlayer).play()

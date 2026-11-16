@@ -7,6 +7,10 @@ run/main_scene="res://scenes/main/Main.tscn"
 config/features=PackedStringArray("4.3")
 config/icon="res://icon.svg"
 
+[autoload]
+SaveManager="*res://scripts/save/save_manager.gd"
+AudioManager="*res://scripts/managers/audio_manager.gd"
+
 [display]
 window/size/viewport_width=720
 window/size/viewport_height=1280

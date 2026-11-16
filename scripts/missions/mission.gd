@@ -9,7 +9,9 @@ signal mission_failed
 var current_kills := 0
 var is_active := false
 var is_finished := false
+var elapsed_seconds := 0.0
 var _registered_enemies: Dictionary = {}
+var _result_recorded := false
 
 
 func _ready() -> void:
@@ -20,8 +22,15 @@ func _ready() -> void:
 		register_player(player)
 
 
+func _process(delta: float) -> void:
+	if is_active:
+		elapsed_seconds += delta
+
+
 func start_mission() -> void:
 	current_kills = 0
+	elapsed_seconds = 0.0
+	_result_recorded = false
 	is_finished = false
 	is_active = true
 	objective_updated.emit(current_kills, required_kills)
@@ -67,11 +76,18 @@ func _on_player_died() -> void:
 
 
 func _finish_mission(won: bool) -> void:
+	if is_finished:
+		return
 	is_finished = true
 	is_active = false
 	for enemy in get_tree().get_nodes_in_group("mission_enemies"):
 		enemy.set_physics_process(false)
+	if not _result_recorded:
+		_result_recorded = true
+		SaveManager.record_mission_result(won, current_kills, elapsed_seconds)
 	if won:
+		AudioManager.play_sfx("enemy_down")
 		mission_completed.emit()
 	else:
+		AudioManager.play_sfx("hurt")
 		mission_failed.emit()

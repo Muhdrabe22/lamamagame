@@ -24,7 +24,6 @@ func _physics_process(_delta: float) -> void:
 	if _is_dead:
 		velocity = Vector2.ZERO
 		return
-
 	var direction := _move_input
 	if direction.is_zero_approx():
 		direction = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
@@ -35,7 +34,6 @@ func _physics_process(_delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_dead:
 		return
-
 	if event is InputEventMouseMotion:
 		aim_at(get_global_mouse_position())
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -69,6 +67,15 @@ func take_damage(amount: int) -> void:
 		return
 	current_health = maxi(0, current_health - amount)
 	health_changed.emit(current_health, max_health)
+	if has_node("Body"):
+		var body := get_node("Body") as CanvasItem
+		var tween := create_tween()
+		tween.tween_property(body, "modulate", Color(1.0, 0.25, 0.2, 1.0), 0.04)
+		tween.tween_property(body, "modulate", Color.WHITE, 0.2)
+	if has_node("HitEffect"):
+		(get_node("HitEffect") as Node2D).burst(Color(1.0, 0.3, 0.2, 1.0))
+	if has_node("AudioStreamPlayer"):
+		(get_node("AudioStreamPlayer") as AudioStreamPlayer).play()
 	if current_health == 0:
 		_is_dead = true
 		velocity = Vector2.ZERO

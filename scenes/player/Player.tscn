@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player_script"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/Weapon.tscn" id="2_weapon"]
+[ext_resource type="Script" path="res://scripts/managers/hit_effect.gd" id="3_hit_effect"]
 
 [sub_resource type="CircleShape2D" id="PlayerCollision"]
 radius = 20.0
@@ -20,3 +21,8 @@ shape = SubResource("PlayerCollision")
 
 [node name="Weapon" parent="." instance=ExtResource("2_weapon")]
 position = Vector2(12, 0)
+
+[node name="HitEffect" type="Node2D" parent="."]
+script = ExtResource("3_hit_effect")
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
