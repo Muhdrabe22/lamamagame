@@ -1,38 +1,39 @@
 # SNIPER ELITE
 
-A mobile-first arcade target-practice prototype for Android, built with Godot 4.
+A mobile-first Godot 4 prototype targeting Android.
 
-## Step 1: Run the first playable build
+## Run the mission
 
-The project currently contains a simple playable loop: tap **Start**, hit the targets before the 30-second timer runs out, and try to beat your score. Tapping the arena away from the target counts as a miss. The UI is designed for portrait touch screens and also works with a mouse in the editor.
+1. Open `project.godot` in Godot 4.3 or later.
+2. Press **F6** to run `scenes/main/Main.tscn`, or **F5** to launch the project.
+3. Use the on-screen arrows to move, tap the arena to aim/fire, or use the FIRE button. Use RELOAD when needed.
+4. Eliminate all three red targets to complete the mission. The current build uses simple placeholder shapes.
 
-### Run in Godot
+## Scene tree
 
-1. Install Godot 4.3 or later.
-2. Clone or download this repository.
-3. In Godot Project Manager, choose **Import** and select this repository's `project.godot`.
-4. Open the project and press **F6** to run the main scene, or **F5** to run the project.
+```text
+Main (Node2D)
+└── UrbanMission (instance)
+    ├── Background / Road / RoadMarkings (Polygon2D)
+    ├── Player (CharacterBody2D)
+    │   ├── Body (Polygon2D)
+    │   ├── CollisionShape2D
+    │   └── Weapon (instance)
+    │       ├── Barrel (Polygon2D)
+    │       └── Muzzle (Polygon2D)
+    ├── EnemyA / EnemyB / EnemyC (Area2D instances)
+    │   ├── Body and CenterMark (Polygon2D)
+    │   └── CollisionShape2D
+    ├── MissionController (Node)
+    └── HUD (CanvasLayer instance)
+```
 
-## Step 2: Build and test on Android
+## Controls
 
-1. Install the Android export templates from Godot's **Editor > Manage Export Templates** menu.
-2. Install the Android SDK and configure its paths in **Editor > Editor Settings > Export > Android**.
-3. In **Project > Export**, add an Android preset and set the package name to a unique reverse-domain identifier, such as `com.example.sniperelite`.
-4. Connect an Android device with USB debugging enabled, or use an emulator, then deploy the project from Godot.
+- On-screen arrow buttons: move the player.
+- Tap/click the arena: aim and fire.
+- FIRE: shoot in the current aim direction.
+- RELOAD: refill the magazine.
+- Desktop: arrow keys move; left-click aims and fires.
 
-## Project layout
-
-- `assets/` — art, audio, materials, and textures
-- `scenes/` — reusable Godot scenes
-- `scripts/` — GDScript logic
-- `levels/` — chapter and mission content
-- `data/` — gameplay tuning data
-- `resources/` — shared Godot resources
-- `tests/` — future automated gameplay tests
-
-## Next development steps
-
-1. Add a mission scene with a themed background and objective.
-2. Replace the placeholder target with animated targets and add hit feedback/audio.
-3. Add difficulty progression and persistent high scores.
-4. Add Android export presets and test performance on a real device.
+The art is placeholder geometry. Add proper animations, sound, original assets, and Android export settings after validating the core loop on a device.

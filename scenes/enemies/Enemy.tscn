@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/enemy.gd" id="1_enemy_script"]
+
+[sub_resource type="CircleShape2D" id="EnemyCollision"]
+radius = 25.0
+
+[node name="Enemy" type="Area2D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_enemy_script")
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(0.8, 0.27, 0.22, 1)
+polygon = PackedVector2Array(0, -25, 22, -13, 22, 13, 0, 25, -22, 13, -22, -13)
+
+[node name="CenterMark" type="Polygon2D" parent="."]
+color = Color(0.97, 0.82, 0.58, 1)
+polygon = PackedVector2Array(-3, -15, 3, -15, 3, 15, -3, 15)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("EnemyCollision")

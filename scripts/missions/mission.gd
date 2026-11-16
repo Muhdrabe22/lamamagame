@@ -16,6 +16,8 @@ func _ready() -> void:
 	start_mission()
 	for enemy in get_tree().get_nodes_in_group("mission_enemies"):
 		register_enemy(enemy)
+	for player in get_tree().get_nodes_in_group("players"):
+		register_player(player)
 
 
 func start_mission() -> void:
