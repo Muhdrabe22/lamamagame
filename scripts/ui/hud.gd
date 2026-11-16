@@ -9,7 +9,7 @@ var _health_label: Label
 var _ammo_label: Label
 var _objective_label: Label
 var _result_label: Label
-var _move_buttons: Dictionary = {}
+var _result_overlay: ColorRect
 var _move_state: Dictionary = {"left": false, "right": false, "up": false, "down": false}
 
 
@@ -44,16 +44,12 @@ func _build_ui() -> void:
 	_ammo_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_row.add_child(_ammo_label)
 
-	_objective_label = _new_label("Objective: 0 / 3", 20)
+	_objective_label = _new_label("Eliminate enemies: 0 / 3", 20)
 	layout.add_child(_objective_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	layout.add_child(spacer)
-
-	_result_label = _new_label("Tap the screen to aim and fire", 18)
-	_result_label.custom_minimum_size = Vector2(0, 42)
-	layout.add_child(_result_label)
 
 	var controls := HBoxContainer.new()
 	controls.add_theme_constant_override("separation", 8)
@@ -82,6 +78,30 @@ func _build_ui() -> void:
 	reload_button.custom_minimum_size = Vector2(150, 30)
 	reload_button.pressed.connect(_on_reload_pressed)
 	actions.add_child(reload_button)
+
+	_result_overlay = ColorRect.new()
+	_result_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_result_overlay.color = Color(0.02, 0.04, 0.06, 0.82)
+	_result_overlay.visible = false
+	add_child(_result_overlay)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_result_overlay.add_child(center)
+	var result_box := VBoxContainer.new()
+	result_box.custom_minimum_size = Vector2(420, 220)
+	result_box.add_theme_constant_override("separation", 18)
+	center.add_child(result_box)
+	_result_label = _new_label("MISSION COMPLETE", 30)
+	_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_box.add_child(_result_label)
+	var result_hint := _new_label("Ready for another run?", 18)
+	result_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_box.add_child(result_hint)
+	var restart_button := _new_button("RESTART MISSION")
+	restart_button.custom_minimum_size = Vector2(0, 60)
+	restart_button.pressed.connect(_restart_mission)
+	result_box.add_child(restart_button)
 
 
 func _new_label(text: String, size: int) -> Label:
@@ -114,7 +134,6 @@ func _add_move_button(grid: GridContainer, direction: String, text: String) -> v
 	button.button_down.connect(_on_move_button_down.bind(direction))
 	button.button_up.connect(_on_move_button_up.bind(direction))
 	grid.add_child(button)
-	_move_buttons[direction] = button
 
 
 func _connect_game_signals() -> void:
@@ -155,15 +174,23 @@ func _on_objective_updated(current: int, required: int) -> void:
 
 
 func _on_mission_completed() -> void:
-	_result_label.text = "MISSION COMPLETE — tap Restart to play again"
+	_show_result("MISSION COMPLETE", "You eliminated every target.")
 
 
 func _on_mission_failed() -> void:
-	_result_label.text = "MISSION FAILED — player down"
+	_show_result("MISSION FAILED", "Your health reached zero.")
+
+
+func _show_result(title: String, hint: String) -> void:
+	_result_label.text = title
+	_result_label.get_parent().get_child(1).text = hint
+	_result_overlay.visible = true
+	for button in get_tree().get_nodes_in_group("mission_move_buttons"):
+		button.disabled = true
 
 
 func _on_player_died() -> void:
-	_result_label.text = "Player down"
+	_on_mission_failed()
 
 
 func _on_move_button_down(direction: String) -> void:
@@ -186,7 +213,7 @@ func _update_player_movement() -> void:
 
 
 func _on_shoot_pressed() -> void:
-	if is_instance_valid(_player):
+	if is_instance_valid(_player) and not _mission.is_finished:
 		_player.fire()
 
 
@@ -196,3 +223,7 @@ func _on_reload_pressed() -> void:
 	var weapon: Node = _player.get_node_or_null("Weapon")
 	if is_instance_valid(weapon) and weapon.has_method("reload"):
 		weapon.reload()
+
+
+func _restart_mission() -> void:
+	get_tree().reload_current_scene()

@@ -58,14 +58,20 @@ func _on_enemy_died(enemy: Node) -> void:
 	current_kills += 1
 	objective_updated.emit(current_kills, required_kills)
 	if current_kills >= required_kills:
-		is_finished = true
-		is_active = false
-		mission_completed.emit()
+		_finish_mission(true)
 
 
 func _on_player_died() -> void:
-	if not is_active or is_finished:
-		return
+	if is_active and not is_finished:
+		_finish_mission(false)
+
+
+func _finish_mission(won: bool) -> void:
 	is_finished = true
 	is_active = false
-	mission_failed.emit()
+	for enemy in get_tree().get_nodes_in_group("mission_enemies"):
+		enemy.set_physics_process(false)
+	if won:
+		mission_completed.emit()
+	else:
+		mission_failed.emit()

@@ -15,6 +15,7 @@ var _is_dead := false
 
 func _ready() -> void:
 	current_health = max_health
+	add_to_group("players")
 	_weapon = get_node_or_null(weapon_path)
 	health_changed.emit(current_health, max_health)
 
@@ -70,4 +71,5 @@ func take_damage(amount: int) -> void:
 	health_changed.emit(current_health, max_health)
 	if current_health == 0:
 		_is_dead = true
+		velocity = Vector2.ZERO
 		died.emit()
