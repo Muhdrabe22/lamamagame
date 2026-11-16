@@ -8,7 +8,6 @@ var _mission: Node
 var _health_label: Label
 var _ammo_label: Label
 var _objective_label: Label
-var _stats_label: Label
 var _result_label: Label
 var _result_hint: Label
 var _result_overlay: ColorRect
@@ -22,8 +21,6 @@ func _ready() -> void:
 	_build_ui()
 	_connect_game_signals()
 	_refresh_labels()
-	_update_stats(SaveManager.stats)
-	SaveManager.stats_changed.connect(_update_stats)
 
 
 func _build_ui() -> void:
@@ -49,8 +46,6 @@ func _build_ui() -> void:
 	top_row.add_child(_ammo_label)
 	_objective_label = _new_label("Eliminate enemies: 0 / 3", 20)
 	layout.add_child(_objective_label)
-	_stats_label = _new_label("Wins: 0  •  Best kills: 0", 16)
-	layout.add_child(_stats_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -85,26 +80,35 @@ func _build_ui() -> void:
 
 	_result_overlay = ColorRect.new()
 	_result_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_result_overlay.color = Color(0.02, 0.04, 0.06, 0.84)
+	_result_overlay.color = Color(0.02, 0.04, 0.06, 0.86)
 	_result_overlay.visible = false
 	add_child(_result_overlay)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_result_overlay.add_child(center)
 	var result_box := VBoxContainer.new()
-	result_box.custom_minimum_size = Vector2(420, 220)
-	result_box.add_theme_constant_override("separation", 18)
+	result_box.custom_minimum_size = Vector2(420, 270)
+	result_box.add_theme_constant_override("separation", 14)
 	center.add_child(result_box)
 	_result_label = _new_label("MISSION COMPLETE", 30)
 	_result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	result_box.add_child(_result_label)
-	_result_hint = _new_label("Ready for another run?", 18)
+	_result_hint = _new_label("", 18)
 	_result_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	result_box.add_child(_result_hint)
-	var restart_button := _new_button("RESTART MISSION")
-	restart_button.custom_minimum_size = Vector2(0, 60)
-	restart_button.pressed.connect(_restart_mission)
+	var next_button := _new_button("NEXT MISSION")
+	next_button.custom_minimum_size = Vector2(0, 56)
+	next_button.pressed.connect(_on_next_mission)
+	result_box.add_child(next_button)
+	var restart_button := _new_button("RETRY MISSION")
+	restart_button.custom_minimum_size = Vector2(0, 52)
+	restart_button.pressed.connect(func(): get_tree().reload_current_scene())
 	result_box.add_child(restart_button)
+	var menu_button := _new_button("MAIN MENU")
+	menu_button.custom_minimum_size = Vector2(0, 52)
+	menu_button.pressed.connect(func(): get_tree().change_scene_to_file("res://scenes/main/Main.tscn"))
+	result_box.add_child(menu_button)
+	_mission.set_meta("result_next_button", next_button)
 
 
 func _new_label(text: String, size: int) -> Label:
@@ -163,10 +167,6 @@ func _refresh_labels() -> void:
 		_on_objective_updated(_mission.current_kills, _mission.required_kills)
 
 
-func _update_stats(stats: Dictionary) -> void:
-	_stats_label.text = "Wins: %d  •  Best kills: %d  •  Total kills: %d" % [stats["missions_won"], stats["best_kills"], stats["total_kills"]]
-
-
 func _on_health_changed(current: int, maximum: int) -> void:
 	_health_label.text = "Health: %d / %d" % [current, maximum]
 
@@ -180,14 +180,14 @@ func _on_objective_updated(current: int, required: int) -> void:
 
 
 func _on_mission_completed() -> void:
-	_show_result("MISSION COMPLETE", "You eliminated every target. Progress saved.")
+	_show_result("MISSION COMPLETE", "You completed the operation. Progress saved.", true)
 
 
 func _on_mission_failed() -> void:
-	_show_result("MISSION FAILED", "Your health reached zero. Progress saved.")
+	_show_result("MISSION FAILED", "Your health reached zero. Try again.", false)
 
 
-func _show_result(title: String, hint: String) -> void:
+func _show_result(title: String, hint: String, won: bool) -> void:
 	_result_label.text = title
 	_result_hint.text = hint
 	_result_overlay.visible = true
@@ -195,6 +195,30 @@ func _show_result(title: String, hint: String) -> void:
 		button.disabled = true
 	if is_instance_valid(_player):
 		_player.set_move_input(Vector2.ZERO)
+	var next_button := _mission.get_meta("result_next_button") as Button
+	var next_id := _next_mission_id()
+	next_button.visible = won and not next_id.is_empty() and SaveManager.is_mission_unlocked(next_id)
+
+
+func _next_mission_id() -> String:
+	var order := SaveManager.MISSION_ORDER
+	var index := order.find(_mission.mission_id)
+	if index >= 0 and index + 1 < order.size():
+		return order[index + 1]
+	return ""
+
+
+func _on_next_mission() -> void:
+	var next_id := _next_mission_id()
+	if next_id.is_empty() or not SaveManager.is_mission_unlocked(next_id):
+		return
+	var scene_by_id := {
+		"urban_01": "res://scenes/missions/UrbanMission.tscn",
+		"desert_01": "res://scenes/missions/DesertMission.tscn",
+		"jungle_01": "res://scenes/missions/JungleMission.tscn",
+	}
+	SaveManager.selected_mission_id = next_id
+	get_tree().change_scene_to_file(scene_by_id[next_id])
 
 
 func _on_player_died() -> void:
@@ -231,7 +255,3 @@ func _on_reload_pressed() -> void:
 	var weapon: Node = _player.get_node_or_null("Weapon")
 	if is_instance_valid(weapon) and weapon.has_method("reload"):
 		weapon.reload()
-
-
-func _restart_mission() -> void:
-	get_tree().reload_current_scene()

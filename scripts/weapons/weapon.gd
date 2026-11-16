@@ -17,8 +17,28 @@ var _is_reloading := false
 
 
 func _ready() -> void:
+	_apply_selected_weapon()
 	current_ammo = magazine_size
 	ammo_changed.emit(current_ammo, magazine_size)
+
+
+func _apply_selected_weapon() -> void:
+	match SaveManager.selected_weapon_id:
+		"scout":
+			damage = 26
+			fire_interval = 0.28
+			magazine_size = 8
+			reload_seconds = 0.8
+		"heavy":
+			damage = 60
+			fire_interval = 0.75
+			magazine_size = 3
+			reload_seconds = 1.55
+		_:
+			damage = 34
+			fire_interval = 0.45
+			magazine_size = 5
+			reload_seconds = 1.2
 
 
 func _process(delta: float) -> void:

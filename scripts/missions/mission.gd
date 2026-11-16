@@ -4,6 +4,7 @@ signal objective_updated(current_kills: int, required_kills: int)
 signal mission_completed
 signal mission_failed
 
+@export var mission_id: String = "urban_01"
 @export var required_kills: int = 3
 
 var current_kills := 0
@@ -84,7 +85,7 @@ func _finish_mission(won: bool) -> void:
 		enemy.set_physics_process(false)
 	if not _result_recorded:
 		_result_recorded = true
-		SaveManager.record_mission_result(won, current_kills, elapsed_seconds)
+		SaveManager.record_mission_result(won, current_kills, elapsed_seconds, mission_id)
 	if won:
 		AudioManager.play_sfx("enemy_down")
 		mission_completed.emit()
